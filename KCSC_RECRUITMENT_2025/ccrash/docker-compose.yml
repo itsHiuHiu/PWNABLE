@@ -1,0 +1,8 @@
+version: '3'
+services:
+  dist_ccrash:
+    build: .
+    ports:
+      - "1338:1338"
+    privileged: false
+    restart: unless-stopped
