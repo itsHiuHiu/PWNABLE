@@ -1,1 +1,0 @@
-KASHI{test_flag}
