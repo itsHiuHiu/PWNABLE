@@ -44,12 +44,12 @@ void __cdecl shell()
 > Basically is our target =))
 
 ## IDEA
-- With the check of the index we could find an OutOfBound bug because the index was check only with the value of 4 (greater) while there is no limit for the lower 0 index. With that in mind, we will use the bug to invest the data of those stage of memory and find the way for exploitation.
+- With the check of the index we could find an OutOfBound bug because the index was check only with the value of 4 (greater) while there is no limit for the lower 0 index. With that in mind, we will use the bug to investigate the data of those stage of memory and find the way for exploitation.
 
 ## EXPLOIT
 - Checksec
 > ![{3C0EF49A-B230-437E-840D-4FB96F17AEB4}](https://hackmd.io/_uploads/S1jqwN7okg.png)
-> Pay attention on PIE (off) and RELRO (partial) -> function can be called easily and the got table can be overwrited
+> Pay attention on PIE (off) and RELRO (partial) -> function can be called easily and the got table can be overwriten
 
 - GDB
 > Have a test with idx = 0:
@@ -57,10 +57,10 @@ void __cdecl shell()
 > We can see that our idx is read on the stack at 0x7fffffffde24 and then it is moved in the eax and converted to the form of 8 bytes. Then it is shifted to the left 5 bytes and the result is as the result of the multiplication of the idx and 2 power 5 (idx * 2^5), following by the PNJs address added (0x404080). Finally, based on the above result in the rax, we are asked to have the input and it will be stored in the result.
 > - We can have the formula: idx * 0x20 = result (where the input will be writen).
 > - With that formula, with the idx, the address we write is 0x20 byte in distance and we are able to write at 0x404080 + (idx * 0x20).
-> - Let have the investigating at the lower addresses from PNJs + 0:
+> - Let's have the investigate at the lower addresses from PNJs + 0:
 > ![{05E3AA23-DE66-4540-9A37-FD31289B9DEC}](https://hackmd.io/_uploads/S1_ts47s1l.png)
-> - And we got the GOT table here. The idea will be completed with the overwrite of a GOT address satisfying the formula by the Shell function address.
-> - We can realize that we can only write at exit and read fuction. Have a look back to IDA to check if it is possible for this overwrite to have its meanning:
+> - And we got the GOT table here. The idea will be completed with the overwriting of a GOT address satisfying the formula by the Shell function address.
+> - We can realize that we can only write at exit and read fuction. Have a look back to IDA to check if it is possible to overwrite and to see if it makes sense:
 > ```
 > puts("Oh really ? What's the correct spelling ?");
 > fwrite("> ", 1uLL, 2uLL, stdout);
@@ -71,8 +71,8 @@ void __cdecl shell()
 > - After the read function is called, the only remaining function is puts and puts' address is not reasonable for our formula.
 > - So how can we do now??? Just chill here=))) You're all forgot 1 thing is the input for correction have the size of 32 bytes. 
 > "But HiuHiu what can we do with that?"
-> - Alright, we will have the exit@plt overwited by 8 bytes from our input right? And the size of input is 32. It means we can overwrite the 3 lower functions in the GOT table and see what? puts@plt is just below the exit one.
-> **=> So the solutions is our input will includes 16 bytes with 8 first bytes is random and the remaining is the address of Shell function.**
+> - Alright, we will have the exit@plt overwiten by 8 bytes from our input right? And the size of input is 32. It means we can overwrite the 3 lower functions in the GOT table and see what? puts@plt is just below the exit one.
+> **=> So the solutions is our input will include 16 bytes with first 8 bytes is random and the remaining is the address of Shell function.**
 - Script:
 > What are you waiting for? Go having the script written like this:
 > ```
